@@ -1,4 +1,54 @@
 import wikipedia
+from google.cloud import language_v1
+from google.cloud.language_v1 import enums
+
+
+def sample_analyze_sentiment(text_content):
+    """
+    Analyzing Sentiment in a String
+
+    Args:
+      text_content The text content to analyze
+    """
+
+    client = language_v1.LanguageServiceClient()
+
+    # text_content = 'I am so happy and joyful.'
+
+    # Available types: PLAIN_TEXT, HTML
+    type_ = enums.Document.Type.PLAIN_TEXT
+
+    # Optional. If not specified, the language is automatically detected.
+    # For list of supported languages:
+    # https://cloud.google.com/natural-language/docs/languages
+    language = "en"
+    document = {"content": text_content, "type": type_, "language": language}
+
+    # Available values: NONE, UTF8, UTF16, UTF32
+    encoding_type = enums.EncodingType.UTF8
+
+    response = client.analyze_sentiment(document, encoding_type=encoding_type)
+    # Get overall sentiment of the input document
+    print(u"Document sentiment score: {}".format(response.document_sentiment.score))
+    print(
+        u"Document sentiment magnitude: {}".format(
+            response.document_sentiment.magnitude
+        )
+    )
+
+    # Get sentiment for all sentences in the document
+
+    sentiment = []
+    for sentence in response.sentences:
+        print(u"Sentence text: {}".format(sentence.text.content))
+        print(u"Sentence sentiment score: {}".format(sentence.sentiment.score))
+        print(u"Sentence sentiment magnitude: {}".format(sentence.sentiment.magnitude))
+        sentiment.append((sentence.text.content, sentence.sentiment.score, sentence.sentiment.magnitude))
+    # Get the language of the text, which will be the same as
+    # the language specified in the request or, if not specified,
+    # the automatically-detected language.
+    print(u"Language of the text: {}".format(response.language))
+    return  sentiment
 
 def hello_wikipedia(request):
     """Takes JSON Payload {"entity": "google"}
@@ -7,8 +57,20 @@ def hello_wikipedia(request):
 
     if request_json and 'entity' in request_json:
         entity = request_json['entity']
-        print(entity)
-        res = wikipedia.summary(entity, sentences=1)
+        print("entity: {}".format(entity))
+        
+        res = wikipedia.summary(entity, sentences=5)
+        print("res: ", res)
+
+        sentiments = sample_analyze_sentiment(res)
+        res = ""
+
+        for sentiment in sentiments:
+        
+            res = res + "Text: {} Sentiment Score: {} Sentiment Magnitude: {}\n".format(
+                sentiment[0], sentiment[1], sentiment[2]
+            )
+
         return res
     else:
         return f'No Payload'
