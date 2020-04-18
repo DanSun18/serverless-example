@@ -1,3 +1,5 @@
 # Function dependencies, for example:
 # package>=version
 wikipedia
+google-cloud
+google-cloud-language
